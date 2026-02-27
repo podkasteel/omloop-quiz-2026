@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#23AAE1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <title>Omloop Quiz - De Rode Lantaarn</title>
+  <style>
+    @font-face {
+      font-family: 'KG Summer Storm';
+      src: url('assets/fonts/KGSummerStormSmooth.ttf') format('truetype');
+      font-weight: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'KG Summer Storm Rough';
+      src: url('assets/fonts/KGSummerStormRough.ttf') format('truetype');
+      font-weight: normal;
+      font-display: swap;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --blauw: #23AAE1;
+      --rood: #C93C3B;
+      --zwart: #1A1A1A;
+      --wit: #FFFFFF;
+      --teal: #4A8B9B;
+      --oker: #D4A13E;
+      --roze: #B4567D;
+      --donkerblauw: #2B5B7A;
+      --groen: #2ECC71;
+    }
+
+    body {
+      font-family: 'Trebuchet MS', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--blauw);
+      color: var(--zwart);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    .header {
+      background: var(--donkerblauw);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+    }
+
+    .header-logo {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      object-fit: cover;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .header-text h1 {
+      font-family: 'KG Summer Storm', 'Impact', 'Arial Black', sans-serif;
+      font-size: 18px;
+      font-weight: normal;
+      color: var(--wit);
+      letter-spacing: 0.5px;
+    }
+
+    .header-text .subtitle {
+      font-size: 11px;
+      color: rgba(255,255,255,0.7);
+    }
+
+    .score-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 20px;
+      background: var(--donkerblauw);
+      border-bottom: 3px solid var(--rood);
+    }
+
+    .score-bar .stat {
+      text-align: center;
+    }
+
+    .score-bar .stat-value {
+      font-family: 'KG Summer Storm', 'Impact', sans-serif;
+      font-size: 24px;
+      font-weight: normal;
+      color: var(--wit);
+    }
+
+    .score-bar .stat-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 0.5px;
+    }
+
+    .correct-color { color: var(--groen) !important; }
+    .wrong-color { color: var(--rood) !important; }
+    .streak-color { color: var(--wit) !important; }
+
+    .progress-container {
+      height: 5px;
+      background: rgba(0,0,0,0.15);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--rood), var(--oker));
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .quiz-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .rider-card {
+      background: var(--wit);
+      border: 3px solid var(--donkerblauw);
+      border-radius: 16px;
+      padding: 24px 20px;
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+
+    .rider-card.correct {
+      border-color: var(--groen);
+      box-shadow: 0 0 0 4px rgba(46, 204, 113, 0.3), 0 4px 16px rgba(0,0,0,0.15);
+    }
+
+    .rider-card.wrong {
+      border-color: var(--rood);
+      box-shadow: 0 0 0 4px rgba(201, 60, 59, 0.3), 0 4px 16px rgba(0,0,0,0.15);
+    }
+
+    .rider-number {
+      font-size: 12px;
+      color: var(--teal);
+      margin-bottom: 4px;
+    }
+
+    .rider-name {
+      font-family: 'KG Summer Storm', 'Impact', 'Arial Black', sans-serif;
+      font-size: 30px;
+      font-weight: normal;
+      line-height: 1.2;
+      color: var(--zwart);
+    }
+
+    .feedback {
+      font-size: 14px;
+      margin-top: 10px;
+      font-weight: 700;
+      min-height: 20px;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .option-btn {
+      background: var(--wit);
+      border: 2px solid var(--donkerblauw);
+      border-radius: 12px;
+      color: var(--zwart);
+      padding: 14px 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+      text-align: center;
+      line-height: 1.3;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .option-btn:active {
+      transform: scale(0.96);
+      background: rgba(255,255,255,0.8);
+    }
+
+    .option-btn.correct-answer {
+      background: var(--groen);
+      border-color: var(--groen);
+      color: var(--wit);
+    }
+
+    .option-btn.wrong-answer {
+      background: var(--rood);
+      border-color: var(--rood);
+      color: var(--wit);
+    }
+
+    .option-btn.reveal-correct {
+      background: var(--groen);
+      border-color: var(--groen);
+      color: var(--wit);
+      opacity: 0.7;
+    }
+
+    .option-btn:disabled {
+      cursor: default;
+    }
+
+    /* Start screen */
+    .start-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      text-align: center;
+    }
+
+    .start-logo {
+      width: 140px;
+      height: 140px;
+      border-radius: 20px;
+      object-fit: cover;
+      margin-bottom: 20px;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.2);
+    }
+
+    .start-screen h2 {
+      font-family: 'KG Summer Storm', 'Impact', 'Arial Black', sans-serif;
+      font-size: 32px;
+      font-weight: normal;
+      color: var(--wit);
+      margin-bottom: 4px;
+      text-shadow: 1px 2px 4px rgba(0,0,0,0.15);
+    }
+
+    .start-screen .race-name {
+      font-family: 'KG Summer Storm', 'Impact', 'Arial Black', sans-serif;
+      font-size: 22px;
+      font-weight: normal;
+      color: var(--zwart);
+      margin-bottom: 8px;
+    }
+
+    .start-screen p {
+      color: var(--donkerblauw);
+      margin-bottom: 28px;
+      font-size: 15px;
+      line-height: 1.5;
+      font-weight: 600;
+    }
+
+    .start-btn, .restart-btn {
+      background: var(--rood);
+      border: none;
+      border-radius: 14px;
+      color: var(--wit);
+      padding: 16px 48px;
+      font-family: 'KG Summer Storm', 'Impact', 'Arial Black', sans-serif;
+      font-size: 22px;
+      font-weight: normal;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.15s ease;
+      box-shadow: 0 4px 12px rgba(201, 60, 59, 0.4);
+    }
+
+    .start-btn:active, .restart-btn:active {
+      transform: scale(0.96);
+    }
+
+    .mode-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .mode-btn {
+      background: var(--wit);
+      border: 2px solid var(--donkerblauw);
+      border-radius: 10px;
+      color: var(--donkerblauw);
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.15s ease;
+    }
+
+    .mode-btn.active {
+      border-color: var(--rood);
+      color: var(--wit);
+      background: var(--rood);
+    }
+
+    /* Results screen */
+    .results-screen {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      text-align: center;
+    }
+
+    .results-screen h2 {
+      font-family: 'KG Summer Storm', 'Impact', 'Arial Black', sans-serif;
+      font-size: 32px;
+      font-weight: normal;
+      color: var(--wit);
+      margin-bottom: 8px;
+    }
+
+    .results-score {
+      font-family: 'KG Summer Storm Rough', 'KG Summer Storm', 'Impact', sans-serif;
+      font-size: 72px;
+      font-weight: normal;
+      color: var(--wit);
+      text-shadow: 2px 3px 0 var(--rood);
+    }
+
+    .results-detail {
+      color: var(--donkerblauw);
+      font-size: 16px;
+      font-weight: 600;
+      margin: 8px 0 32px;
+      white-space: pre-line;
+    }
+
+    .results-logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 14px;
+      object-fit: cover;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .rider-fact {
+      font-size: 13px;
+      color: var(--teal);
+      margin-top: 8px;
+      line-height: 1.4;
+      min-height: 0;
+    }
+
+    .next-btn {
+      background: var(--donkerblauw);
+      border: none;
+      border-radius: 12px;
+      color: var(--wit);
+      padding: 14px 40px;
+      font-family: 'KG Summer Storm', 'Impact', 'Arial Black', sans-serif;
+      font-size: 18px;
+      font-weight: normal;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: transform 0.15s ease;
+      margin-top: 16px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    }
+
+    .next-btn:active {
+      transform: scale(0.96);
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- START SCREEN -->
+  <div id="startScreen" class="start-screen">
+    <img src="assets/logos/rodelantaarn.jpeg" alt="De Rode Lantaarn" class="start-logo">
+    <h2>De Rode Lantaarn</h2>
+    <div class="race-name">Omloop Het Nieuwsblad 2026</div>
+    <p>Ken jij alle 175 renners en hun ploeg?<br>Kies het juiste team voor elke renner!</p>
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="all" onclick="selectMode('all')">Alle 175</button>
+      <button class="mode-btn" data-mode="50" onclick="selectMode('50')">Top 50</button>
+      <button class="mode-btn" data-mode="25" onclick="selectMode('25')">Top 25</button>
+    </div>
+    <button class="start-btn" onclick="startQuiz()">Start Quiz</button>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="quizScreen" class="hidden">
+    <div class="header">
+      <img src="assets/logos/rodelantaarn.jpeg" alt="DRL" class="header-logo" onclick="confirmHome()">
+      <div class="header-text">
+        <h1>Omloop Het Nieuwsblad 2026</h1>
+        <div class="subtitle">Welk team? Quiz</div>
+      </div>
+    </div>
+    <div class="score-bar">
+      <div class="stat">
+        <div class="stat-value correct-color" id="correctCount">0</div>
+        <div class="stat-label">Goed</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="questionNum">1/175</div>
+        <div class="stat-label">Vraag</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value streak-color" id="streakCount">0</div>
+        <div class="stat-label">Streak</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value wrong-color" id="wrongCount">0</div>
+        <div class="stat-label">Fout</div>
+      </div>
+    </div>
+    <div class="progress-container">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="quiz-area">
+      <div class="rider-card" id="riderCard">
+        <div class="rider-number" id="riderNum"></div>
+        <div class="rider-name" id="riderName"></div>
+        <div class="feedback" id="feedback"></div>
+        <div class="rider-fact hidden" id="riderFact"></div>
+      </div>
+      <div class="options-grid" id="optionsGrid"></div>
+      <button class="next-btn hidden" id="nextBtn" onclick="nextQuestion()">Volgende</button>
+    </div>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="resultsScreen" class="results-screen hidden">
+    <img src="assets/logos/rodelantaarn.jpeg" alt="De Rode Lantaarn" class="results-logo">
+    <h2>Resultaat</h2>
+    <div class="results-score" id="finalScore"></div>
+    <div class="results-detail" id="resultsDetail"></div>
+    <button class="restart-btn" onclick="showStart()">Opnieuw</button>
+  </div>
+
+  <script>
+    // ========== DATA ==========
+    const teams = {
+      "Uno-X Mobility": ["Søren Wærenskjold", "Jonas Abrahamsen", "Carl-Frederik Bévort", "Sven Erik Bystrøm", "Markus Hoelgaard", "Erik Nordsaeter Resell", "Rasmus Tiller"],
+      "Alpecin - Premier Tech": ["Jasper Philipsen", "Tobias Bayer", "Lennert Belmans", "Kaden Groves", "Edward Planckaert", "Mathieu van der Poel", "Florian Sénéchal"],
+      "Bahrain Victorious": ["Matej Mohorič", "Kamil Gradek", "Pau Miquel Delgado", "Alec Segaert", "Robert Stannard", "Attila Valter", "Vlad Van Mechelen"],
+      "Decathlon CMA CGM": ["Tobias Lund Andresen", "Stefan Bissegger", "Oscar Chamberlain", "Sander De Pestel", "Stan Dewulf", "Oliver Naesen", "Rasmus Søjberg Pedersen"],
+      "EF Education - EasyPost": ["Kasper Asgreen", "Vincenzo Albanese", "Noah Hobbs", "Mikkel Frølich Honoré", "Luke Lamperti", "Colby Simmons", "Marijn van den Berg"],
+      "Groupama - FDJ United": ["Valentin Madouas", "Cyril Barthe", "Thibaud Gruel", "Axel Huens", "Johan Jacobs", "Clement Russo", "Bastien Tronchon"],
+      "INEOS Grenadiers": ["Michal Kwiatkowski", "Kim Alexander Heiduk", "Magnus Sheffield", "Artem Shmidt", "Ben Swift", "Ben Turner", "Samuel Watson"],
+      "Lidl - Trek": ["Søren Kragh Andersen", "Toms Skujiņš", "Albert Withen Philipsen", "Tim Torn Teutenberg", "Edward Theuns", "Mathias Vacek", "Otto Vergaerde"],
+      "Lotto - Intermarché": ["Arnaud De Lie", "Vito Braet", "Jenno Berckmoes", "Cedric Beullens", "Sébastien Grignard", "Luca Van Boven", "Roel Van Sintmaartensdijk"],
+      "Movistar": ["Roger Adrià", "Orluis Aular", "Jon Barrenetxea", "Carlos Canal", "Iván García Cortina", "Filip Maciejuk", "Manlio Moro"],
+      "NSN Cycling": ["Biniam Girmay", "Lewis Askey", "Guillaume Boivin", "Matis Louvel", "Ryan Mullen", "Riley Sheehan", "Tom Van Asbroeck"],
+      "Red Bull - BORA - hansgrohe": ["Jordi Meeus", "Jarrad Drizners", "Laurence Pithie", "Mick van Dijke", "Tim van Dijke", "Arne Marit", "Gianni Vermeersch"],
+      "Soudal - Quick Step": ["Yves Lampaert", "Paul Magnier", "Casper Pedersen", "Pepijn Reinderink", "Jonathan Vervenne", "Dylan van Baarle", "Dries Van Gestel"],
+      "Jayco AlUla": ["Amaury Capiot", "Dries De Bondt", "Dries De Pooter", "Robert Donaldson", "Anders Foldager", "Jelte Krijnsen", "Kelland O'Brien"],
+      "Picnic PostNL": ["John Degenkolb", "Timo de Jong", "Sean Flynn", "Henri-François Renard-Haquin", "Timo Roosen", "Julius van den Berg", "Frank van den Broek"],
+      "Visma - Lease a Bike": ["Edoardo Affini", "Matthew Brennan", "Per Strand Hagenes", "Timo Kielich", "Christophe Laporte", "Pietro Mattio", "Axel Zingle"],
+      "UAE Emirates XRG": ["Tim Wellens", "Rui Oliveira", "Julius Johansen", "Rune Herregodts", "Sebastian Molano", "Nils Politt", "Florian Vermeersch"],
+      "XDS Astana": ["Davide Ballerini", "Alberto Bettiol", "Yevgeniy Fedorov", "Aaron Gate", "Arjen Livyns", "Alessandro Romele", "Mike Teunissen"],
+      "Cofidis": ["Piet Allegaert", "Stanislaw Aniolkowski", "Jenthe Biermans", "Alex Kirsch", "Hugo Page", "Alexis Renard", "Dylan Teuns"],
+      "Q36.5 Pro Cycling": ["Tom Pidcock", "Aimé De Gendt", "Frederik Frison", "Xandro Meurisse", "Brent Van Moer", "Alfred Wright", "Nickolas Zukowsky"],
+      "Burgos - BH": ["Clément Alleno", "Georgios Bouglas", "Daniel Cavia Sanz", "Josh Burnett", "Alexandre Mayer", "Vojtech Kmínek", "Cesar Macias Estrada"],
+      "Tudor Pro Cycling": ["Stefan Küng", "Marco Haller", "Petr Kelemen", "Aivaras Mikutis", "Luca Mozzato", "Rick Pluimers", "Matteo Trentin"],
+      "Flanders - Baloise": ["Siebe Deweirdt", "Michiel Lambrecht", "Milan Lanhove", "Victor Vercouillie", "Vincent Van Hemelen", "Dylan Vandenstorme", "Ward Vanhoof"],
+      "TotalEnergies": ["Alexys Brunel", "Sandy Dujardin", "Thomas Gachignard", "Samuel Leroux", "Thomas Bonnet", "Anthony Turgis", "Baptiste Vadic"],
+      "Unibet Rose Rockets": ["Joren Bloem", "Karsten Feldmann", "Matyas Kopecky", "Tomas Kopecky", "Lukáš Kubiš", "Niklas Larsen", "Martijn Rasenberg"]
+    };
+
+    // ========== RIDER FACTS ==========
+    const riderFacts = {
+      // Uno-X Mobility
+      "Søren Wærenskjold": "Noors tijdritkampioen en titelverdediger van de Omloop 2025. Won ook het WK tijdrijden U23 in 2022.",
+      "Jonas Abrahamsen": "Droeg de bolletjestrui 12 etappes in de Tour de France 2024. Stond bekend als de ultieme vluchter.",
+      "Carl-Frederik Bévort": "Deense belofte die in 2024 prof werd. Sterk in het klassieke werk.",
+      "Sven Erik Bystrøm": "Werd in 2014 wereldkampioen bij de beloften in Ponferrada, Spanje.",
+      "Markus Hoelgaard": "Noorse allrounder die in 2021 de Arctic Race of Norway won.",
+      "Erik Nordsaeter Resell": "Noors talent, werd 2e in Dwars door Vlaanderen 2024.",
+      "Rasmus Tiller": "Sterke Noorse klassiekerrenner. Won een etappe in de Ronde van Denemarken 2021.",
+
+      // Alpecin - Premier Tech
+      "Jasper Philipsen": "Won het groene puntenklassement in de Tour 2023 met 4 ritzeges. Belgisch sprintersfenomeen.",
+      "Tobias Bayer": "Oostenrijks kampioen op de weg. Sterk in eendagskoersen en als lead-out man.",
+      "Lennert Belmans": "Jonge Belg die zich specialiseert als knecht in de klassiekers.",
+      "Kaden Groves": "Australische sprinter die meerdere etappes won in de Vuelta a España.",
+      "Edward Planckaert": "Vlaamse klassiekerspecialist. Broer van Baptiste Planckaert, wielerfamilie pur sang.",
+      "Mathieu van der Poel": "Won o.a. de Ronde van Vlaanderen, Parijs-Roubaix en Milaan-San Remo. 8-voudig wereldkampioen veldrijden.",
+      "Florian Sénéchal": "Frans kampioen in 2022. Sterke klassiekerrenner en ploegmaat voor de sprinters.",
+
+      // Bahrain Victorious
+      "Matej Mohorič": "Sloveens fenomeen. Won Milaan-San Remo 2022 en meerdere Tour-etappes met gewaagde afdalingen.",
+      "Kamil Gradek": "Poolse sprinter die in 2021 het Pools kampioenschap op de weg won.",
+      "Pau Miquel Delgado": "Jonge Spanjaard, neef van wielrenlegende Pedro Delgado (Vuelta-winnaar 1988).",
+      "Alec Segaert": "Belgisch tijdrittalent. Werd Europees kampioen tijdrijden bij de beloften in 2023.",
+      "Robert Stannard": "Australische allrounder. Eindigde top-10 in meerdere Ardense klassiekers.",
+      "Attila Valter": "Eerste Hongaar ooit in de roze trui in de Giro d'Italia (2021).",
+      "Vlad Van Mechelen": "Jonge Belg met Roemeense roots. Sterk opkomend talent in de Vlaamse koersen.",
+
+      // Decathlon CMA CGM
+      "Tobias Lund Andresen": "Deens supertalent. Won etappes en het puntenklassement in de Tour Down Under 2026.",
+      "Stefan Bissegger": "Zwitserse tijdritspecialist. Meervoudig Zwitsers kampioen tegen de klok.",
+      "Oscar Chamberlain": "Jonge Australiër, maakt zijn debuut in de Europese klassiekers.",
+      "Sander De Pestel": "Belgische belofte die in 2024 de overstap naar de profs maakte.",
+      "Stan Dewulf": "Vlaamse klassiekerrenner. Was top-10 in Parijs-Roubaix 2021 als neoprofessional.",
+      "Oliver Naesen": "Belgische routinier. Werd 2e in de Ronde van Vlaanderen 2020 en 3e in Milaan-San Remo.",
+      "Rasmus Søjberg Pedersen": "Deense sprinter die in 2024 een etappe won in de Vuelta a España.",
+
+      // EF Education - EasyPost
+      "Kasper Asgreen": "Deense klassieker­specialist. Won de Ronde van Vlaanderen 2021 en E3 Saxo Classic.",
+      "Vincenzo Albanese": "Italiaanse puncheur. Werd Italiaans beloftenkampioen en won Trofeo Laigueglia.",
+      "Noah Hobbs": "Jong Amerikaans talent dat opkwam via het EF development team.",
+      "Mikkel Frølich Honoré": "Veelzijdige Deen. Won een etappe in de Vuelta en de Coppi e Bartali.",
+      "Luke Lamperti": "Amerikaanse jongeling. Sterk in korte, punchy koersen.",
+      "Colby Simmons": "Jong Amerikaans talent dat zich ontwikkelt in het Europese peloton.",
+      "Marijn van den Berg": "Nederlandse sprinter. Won etappes in Parijs-Nice en de Quatre Jours de Dunkerque.",
+
+      // Groupama - FDJ United
+      "Valentin Madouas": "Werd 2e in de Ronde van Vlaanderen 2022. Frans klassiekertalent uit Bretagne.",
+      "Cyril Barthe": "Franse klimmer die zich ook waagt aan de Vlaamse kasseikoersen.",
+      "Thibaud Gruel": "Jonge Fransman, specialist in heuvelachtige eendagskoersen.",
+      "Axel Huens": "Belgische neoprofessional uit de Groupama kweekschool.",
+      "Johan Jacobs": "Zwitserse Luxemburger. Sterke wegkapitein in de klassiekers.",
+      "Clement Russo": "Franse renner, sterk in het werk voor de kopmannen.",
+      "Bastien Tronchon": "Franse belofte die zich specialiseert in heuvelige eendagskoersen.",
+
+      // INEOS Grenadiers
+      "Michal Kwiatkowski": "Poolse wereldkampioen 2014. Won o.a. Milaan-San Remo, Strade Bianche en Amstel Gold Race.",
+      "Kim Alexander Heiduk": "Jonge Duitser die in 2024 professioneel werd bij INEOS.",
+      "Magnus Sheffield": "Amerikaans wonderkind. Won de Brabantse Pijl op 19-jarige leeftijd.",
+      "Artem Shmidt": "Israëlisch-Russische renner die zich sterk heeft ontwikkeld in het peloton.",
+      "Ben Swift": "Britse routinier. Al meer dan 15 jaar prof, won etappes in de Giro en Vuelta.",
+      "Ben Turner": "Britse kasseispecialist. Komt uit het veldrijden en excelleert op de Vlaamse hellingen.",
+      "Samuel Watson": "Brits toptalent. Won de Ronde van Groot-Brittannië 2024 op 20-jarige leeftijd.",
+
+      // Lidl - Trek
+      "Søren Kragh Andersen": "Won twee etappes in de Tour de France 2020. Deense allrounder.",
+      "Toms Skujiņš": "Letse puncher. Verraste met een etappezege in de Tour of California.",
+      "Albert Withen Philipsen": "Jonge Deense sprinter. Naamgenoot (geen familie) van Jasper Philipsen.",
+      "Tim Torn Teutenberg": "Duits talent. Zoon van wielrenster Ina-Yoko Teutenberg.",
+      "Edward Theuns": "Vlaamse routinier. Belgisch kampioen op de weg in 2019.",
+      "Mathias Vacek": "Tsjechisch toptalent. Won het EK op de weg bij de beloften.",
+      "Otto Vergaerde": "Vlaamse kasseispecialist. Sterk in dienst van de kopmannen.",
+
+      // Lotto - Intermarché
+      "Arnaud De Lie": "Belgisch wonderkind. Won als 20-jarige al meerdere semi-klassiekers.",
+      "Vito Braet": "Jonge Belg die opkwam via de Lotto opleidingsploeg.",
+      "Jenno Berckmoes": "Belgisch talent dat in 2024 de overstap maakte naar WorldTour-niveau.",
+      "Cedric Beullens": "Vlaamse belofte, specialist in de kortere klassiekers.",
+      "Sébastien Grignard": "Veelzijdige Belg. Sterk in zowel tijdritten als eendagskoersen.",
+      "Luca Van Boven": "Jonge Belg die zich profileert als toekomstige klassiekerrenner.",
+      "Roel Van Sintmaartensdijk": "Nederlander met een opvallend lange achternaam. Sterk in dienst rijden.",
+
+      // Movistar
+      "Roger Adrià": "Spaanse klimmer die nu ook de klassiekers ontdekt. Veelzijdig talent.",
+      "Orluis Aular": "Venezolaans kampioen op de weg. Snelle benen en punchvermogen.",
+      "Jon Barrenetxea": "Jonge Bask uit de Movistar-kweekvijver. Toekomstig klassement­renner.",
+      "Carlos Canal": "Spaanse neoprofessional die zich ontwikkelt in het peloton.",
+      "Iván García Cortina": "Spaanse kasseikoning. Was top-10 in Parijs-Roubaix en de Ronde.",
+      "Filip Maciejuk": "Poolse hardrijder. Sterk in korte tijdritten en prologes.",
+      "Manlio Moro": "Italiaans tijdrittalent. Jong Europees kampioen tegen de klok.",
+
+      // NSN Cycling
+      "Biniam Girmay": "Eerste zwarte Afrikaanse winnaar van een Monument (Gent-Wevelgem 2022). Eritrees fenomeen.",
+      "Lewis Askey": "Britse kasseispecialist met veldritachtergrond. Winnaar Le Samyn 2024.",
+      "Guillaume Boivin": "Canadese routinier. Sterk in eendagskoersen en als wegkapitein.",
+      "Matis Louvel": "Franse aanvaller. Bekend om zijn solo-ontsnappingen.",
+      "Ryan Mullen": "Iers tijdritkampioen. Meervoudig nationaal kampioen tegen de klok.",
+      "Riley Sheehan": "Jonge Amerikaan. Maakt zijn debuut in het Vlaamse Opening Weekend.",
+      "Tom Van Asbroeck": "Belgische routinier met meer dan 10 jaar ervaring in het profpeloton.",
+
+      // Red Bull - BORA - hansgrohe
+      "Jordi Meeus": "Belgische sprinter. Won een etappe in de Tour de France 2023.",
+      "Jarrad Drizners": "Australische allrounder die zich ontwikkelt in de Europese koersen.",
+      "Laurence Pithie": "Nieuw-Zeelands toptalent. Won Dwars door Vlaanderen 2024 op 22-jarige leeftijd.",
+      "Mick van Dijke": "Nederlandse tweeling samen met Tim. Beiden rijden voor Red Bull-BORA.",
+      "Tim van Dijke": "Tweelingbroer van Mick. Sterk op de Vlaamse hellingen.",
+      "Arne Marit": "Belgische sprinter-puncheur. Won GP Marcel Kint 2023.",
+      "Gianni Vermeersch": "Belgische duizendpoot: veldrijden, mountainbike én weg. Was 4e in Parijs-Roubaix 2021.",
+
+      // Soudal - Quick Step
+      "Yves Lampaert": "Won de openingstijdrit van de Tour de France 2022 in Kopenhagen. Belgisch kampioen 2022.",
+      "Paul Magnier": "Frans supertalent, pas 19 jaar. Won al twee etappes in de Volta ao Algarve 2026.",
+      "Casper Pedersen": "Deens klassiekerrenner. Won Parijs-Tours 2020 na een late aanval.",
+      "Pepijn Reinderink": "Jonge Nederlander die zich ontwikkelt bij het Wolfpack.",
+      "Jonathan Vervenne": "Belgische neoprofessional uit de Soudal-Quick Step opleidingsploeg.",
+      "Dylan van Baarle": "Nederlander, won Parijs-Roubaix 2022. Verhuisde van INEOS naar het Wolfpack.",
+      "Dries Van Gestel": "Belgische klassiekerspecialist. Sterk op de Vlaamse hellingen en kasseistroken.",
+
+      // Jayco AlUla
+      "Amaury Capiot": "Belgische puncheur. Won een etappe in de Vuelta a España 2022.",
+      "Dries De Bondt": "Belgisch kampioen op de weg 2022. Sterk in de Vlaamse eendagskoersen.",
+      "Dries De Pooter": "Belgische neoprofessional. Maakt zijn debuut in het WorldTour-peloton.",
+      "Robert Donaldson": "Britse renner die zich specialiseert in dienst rijden.",
+      "Anders Foldager": "Deense allrounder. Sterk in heuvelachtige eendagskoersen.",
+      "Jelte Krijnsen": "Jonge Nederlander uit de Jayco-opleidingsploeg.",
+      "Kelland O'Brien": "Australische baanwielrenner. Olympisch medaillewinnaar op de baan.",
+
+      // Picnic PostNL
+      "John Degenkolb": "Duitse klassiekerlegende. Won zowel Milaan-San Remo als Parijs-Roubaix in 2015.",
+      "Timo de Jong": "Jonge Nederlander in het Nederlandse ProTeam.",
+      "Sean Flynn": "Iers talent dat zich ontwikkelt in het profpeloton.",
+      "Henri-François Renard-Haquin": "Fransman met een van de langste namen in het peloton.",
+      "Timo Roosen": "Nederlander, meervoudig Nederlands kampioen op de weg.",
+      "Julius van den Berg": "Nederlandse allrounder. Broer van Lars van den Berg.",
+      "Frank van den Broek": "Nederlander die in 2024 een etappe won in Parijs-Nice als neoprofessional.",
+
+      // Visma - Lease a Bike
+      "Edoardo Affini": "Italiaanse tijdritspecialist. Meervoudig Italiaans kampioen tegen de klok.",
+      "Matthew Brennan": "Brits supertalent, pas 19 jaar. Wordt gezien als toekomstige klassiekertopper.",
+      "Per Strand Hagenes": "Noor, werd wereldkampioen bij de junioren in 2021 in Leuven.",
+      "Timo Kielich": "Belgische veldrijder-wegrenner. Combineert beide disciplines.",
+      "Christophe Laporte": "Won de Omloop Het Nieuwsblad in 2022. Frans kampioen 2022.",
+      "Pietro Mattio": "Italiaanse klimmer die nu ook de Vlaamse koersen verkent.",
+      "Axel Zingle": "Franse veldrijder met explosief vermogen. Sterk op steile hellingen.",
+
+      // UAE Emirates XRG
+      "Tim Wellens": "Belgische puncheur. Won 3x de Brabantse Pijl en meerdere Giro-etappes.",
+      "Rui Oliveira": "Portugese wegkapitein. Sterk in dienst van de kopmannen.",
+      "Julius Johansen": "Deense neoprofessional bij UAE. Komt uit de opleidingsploeg.",
+      "Rune Herregodts": "Belgische aanvaller. Belgisch kampioen tijdrijden. Bekend om zijn offensieve koersstijl.",
+      "Sebastian Molano": "Colombiaanse sprinter. Won meerdere etappes in de Vuelta a España.",
+      "Nils Politt": "Duitse kasseikoning. Was 2e in Parijs-Roubaix 2019. Won een Tour-etappe in 2021.",
+      "Florian Vermeersch": "Belg, werd 2e in Parijs-Roubaix 2021 als neoprofessional. Combineert weg en veldrijden.",
+
+      // XDS Astana
+      "Davide Ballerini": "Italiaanse sprinter-puncheur. Won de Omloop Het Nieuwsblad in 2021.",
+      "Alberto Bettiol": "Italiaan, won de Ronde van Vlaanderen 2019. Sterk op de Vlaamse hellingen.",
+      "Yevgeniy Fedorov": "Kazachse sprinter. Won etappes in de Tour of Oman.",
+      "Aaron Gate": "Nieuw-Zeelander, meervoudig Nieuw-Zeelands kampioen. Sterk op de baan en de weg.",
+      "Arjen Livyns": "Belgische klassiekerknecht. Sterk op de kasseien.",
+      "Alessandro Romele": "Italiaanse neoprofessional uit het development team.",
+      "Mike Teunissen": "Nederlander, droeg de gele trui in de Tour 2019 na winst in de ploegentijdrit.",
+
+      // Cofidis
+      "Piet Allegaert": "Belgische klassiekerspecialist. Top-10 in Gent-Wevelgem 2020.",
+      "Stanislaw Aniolkowski": "Poolse renner. Sterk als aanvaller in eendagskoersen.",
+      "Jenthe Biermans": "Belgische allrounder. Was 3e in Dwars door Vlaanderen.",
+      "Alex Kirsch": "Luxemburgs kampioen op de weg. Routinier in het peloton.",
+      "Hugo Page": "Frans baantalent. Won goud op de Olympische Spelen 2024 op de baan.",
+      "Alexis Renard": "Frans kampioen op de weg 2023. Sterk in eendagskoersen.",
+      "Dylan Teuns": "Belg, won twee Tour-etappes waaronder op de Mur de Bretagne en La Planche des Belles Filles.",
+
+      // Q36.5 Pro Cycling
+      "Tom Pidcock": "Brits multitalent. Olympisch kampioen mountainbike 2021, won Amstel Gold Race 2024.",
+      "Aimé De Gendt": "Belgische aanvaller. Broer van Thomas De Gendt. Sterk in ontsnappingen.",
+      "Frederik Frison": "Belgische kasseikoning. Specialist op de ruige wegen van Noord-Frankrijk.",
+      "Xandro Meurisse": "Belgische puncheur. Was top-10 in Luik-Bastenaken-Luik en de Ronde.",
+      "Brent Van Moer": "Belg, won een etappe in het Critérium du Dauphiné. Sterk tijdrijder.",
+      "Alfred Wright": "Brits talent dat in 2024 prof werd bij Q36.5.",
+      "Nickolas Zukowsky": "Canadese klimmer-puncheur. Maakt naam in Europese koersen.",
+
+      // Burgos - BH
+      "Clément Alleno": "Jonge Fransman die zijn kansen grijpt bij het Spaanse ProTeam.",
+      "Georgios Bouglas": "Griekse renner. Een van de weinige Grieken in het profpeloton.",
+      "Daniel Cavia Sanz": "Spaanse neoprofessional uit het Burgos-opleidingsteam.",
+      "Josh Burnett": "Australiër die via continentale teams het profpeloton bereikte.",
+      "Alexandre Mayer": "Jonge Fransman. Combineert sprint en punch-vermogen.",
+      "Vojtech Kmínek": "Tsjechische renner. Sterk in heuvelachtige wedstrijden.",
+      "Cesar Macias Estrada": "Mexicaans talent. Een van de weinige Mexicanen in het Europese profpeloton.",
+
+      // Tudor Pro Cycling
+      "Stefan Küng": "Zwitsers tijdritkampioen. Meervoudig Europees kampioen tijdrijden.",
+      "Marco Haller": "Oostenrijkse sprinter-puncheur. Won o.a. een etappe in de Tour of Britain.",
+      "Petr Kelemen": "Tsjechische allrounder die in 2024 prof werd bij Tudor.",
+      "Aivaras Mikutis": "Litouws talent. Een van de weinige Litouwers in het WorldTour-peloton.",
+      "Luca Mozzato": "Italiaanse sprinter. Was 3e in Milaan-San Remo 2023.",
+      "Rick Pluimers": "Nederlandse allrounder uit de Tudor-opleidingsploeg.",
+      "Matteo Trentin": "Italiaanse routinier. Europees kampioen 2018, won etappes in alle drie de grote rondes.",
+
+      // Flanders - Baloise
+      "Siebe Deweirdt": "Vlaamse renner in het thuisteam. Specialist op de lokale kermiskoersen.",
+      "Michiel Lambrecht": "Jonge Belg met Vlaamse klassiekerambities.",
+      "Milan Lanhove": "Belgisch talent uit West-Vlaanderen, het hart van de Vlaamse wielercultuur.",
+      "Victor Vercouillie": "Vlaamse belofte. Rijdt vandaag zijn thuiskoers.",
+      "Vincent Van Hemelen": "Belgische neoprofessional bij het Vlaamse ProTeam.",
+      "Dylan Vandenstorme": "Belgische sprinter-puncheur. Sterk op de Vlaamse wegen.",
+      "Ward Vanhoof": "Belgische klassiekerrenner. Sterk op de kasseistroken.",
+
+      // TotalEnergies
+      "Alexys Brunel": "Fransman, broer van Marc Brunel. Sterk in korte etappekoersen.",
+      "Sandy Dujardin": "Jonge Fransman die zich ontwikkelt in het profpeloton.",
+      "Thomas Gachignard": "Franse neoprofessional uit de TotalEnergies-kweekvijver.",
+      "Samuel Leroux": "Jonge Fransman. Won beloftenkoersen in Frankrijk.",
+      "Thomas Bonnet": "Franse allrounder. Sterk in dienst van de ploeg.",
+      "Anthony Turgis": "Fransman, won een epische etappe over de gravelpaden in de Tour 2024.",
+      "Baptiste Vadic": "Jonge Fransman die zijn eerste seizoen in de klassiekers rijdt.",
+
+      // Unibet Rose Rockets
+      "Joren Bloem": "Nederlandse renner bij het ambitieuze Nederlandse ProTeam.",
+      "Karsten Feldmann": "Deense renner. Maakt zijn debuut in het Vlaamse Opening Weekend.",
+      "Matyas Kopecky": "Belgisch-Tsjechische renner. Broer van Tomas Kopecky.",
+      "Tomas Kopecky": "Broer van Matyas. Beiden rijden samen bij Unibet Rose Rockets.",
+      "Lukáš Kubiš": "Tsjechische puncheur. Maakt indruk in de semi-klassiekers.",
+      "Niklas Larsen": "Deense baanrenner. Olympisch medaillewinnaar op de ploegenachtervolging.",
+      "Martijn Rasenberg": "Nederlander met een sterk voorjaar in de kermiskoersen."
+    };
+
+    // Well-known riders shown first in "top" modes
+    const famousRiders = [
+      "Mathieu van der Poel", "Jasper Philipsen", "Søren Wærenskjold", "Tom Pidcock",
+      "Christophe Laporte", "Matthew Brennan", "Tim Wellens",
+      "Kasper Asgreen", "Biniam Girmay", "Michal Kwiatkowski", "Arnaud De Lie",
+      "Dylan van Baarle", "Paul Magnier", "Alberto Bettiol", "Stefan Küng",
+      "Matteo Trentin", "Oliver Naesen", "Tobias Lund Andresen", "Jordi Meeus",
+      "Ben Turner", "Magnus Sheffield", "Nils Politt", "Florian Vermeersch",
+      "Yves Lampaert", "John Degenkolb", "Matej Mohorič", "Kaden Groves",
+      "Toms Skujiņš", "Luca Mozzato", "Dylan Teuns", "Anthony Turgis",
+      "Marco Haller", "Alec Segaert", "Iván García Cortina", "Brent Van Moer",
+      "Laurence Pithie", "Gianni Vermeersch", "Xandro Meurisse", "Edward Theuns",
+      "Samuel Watson", "Marijn van den Berg", "Valentin Madouas", "Piet Allegaert",
+      "Lewis Askey", "Amaury Capiot", "Lukáš Kubiš", "Axel Zingle",
+      "Florian Sénéchal", "Mike Teunissen", "Edoardo Affini"
+    ];
+
+    // Build rider->team lookup
+    const riderTeamMap = {};
+    const teamNames = Object.keys(teams);
+    for (const [team, riders] of Object.entries(teams)) {
+      for (const rider of riders) {
+        riderTeamMap[rider] = team;
+      }
+    }
+    const allRiders = Object.keys(riderTeamMap);
+
+    // ========== STATE ==========
+    let quizRiders = [];
+    let currentIndex = 0;
+    let correct = 0;
+    let wrong = 0;
+    let streak = 0;
+    let bestStreak = 0;
+    let selectedMode = 'all';
+    let answering = false;
+
+    // ========== FUNCTIONS ==========
+    function shuffle(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function selectMode(mode) {
+      selectedMode = mode;
+      document.querySelectorAll('.mode-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.mode === mode);
+      });
+    }
+
+    function startQuiz() {
+      let riders;
+      if (selectedMode === '25') {
+        riders = shuffle(famousRiders.slice(0, 25));
+      } else if (selectedMode === '50') {
+        riders = shuffle(famousRiders.slice(0, 50));
+      } else {
+        riders = shuffle(allRiders);
+      }
+      quizRiders = riders;
+      currentIndex = 0;
+      correct = 0;
+      wrong = 0;
+      streak = 0;
+      bestStreak = 0;
+
+      document.getElementById('startScreen').classList.add('hidden');
+      document.getElementById('resultsScreen').classList.add('hidden');
+      document.getElementById('quizScreen').classList.remove('hidden');
+
+      showQuestion();
+    }
+
+    function showQuestion() {
+      answering = false;
+      const rider = quizRiders[currentIndex];
+      const correctTeam = riderTeamMap[rider];
+
+      document.getElementById('riderName').textContent = rider;
+      document.getElementById('riderNum').textContent = `Renner ${currentIndex + 1} van ${quizRiders.length}`;
+      document.getElementById('feedback').textContent = '';
+      document.getElementById('riderFact').textContent = '';
+      document.getElementById('riderFact').classList.add('hidden');
+      document.getElementById('nextBtn').classList.add('hidden');
+      document.getElementById('questionNum').textContent = `${currentIndex + 1}/${quizRiders.length}`;
+      document.getElementById('correctCount').textContent = correct;
+      document.getElementById('wrongCount').textContent = wrong;
+      document.getElementById('streakCount').textContent = streak;
+      document.getElementById('progressFill').style.width = `${(currentIndex / quizRiders.length) * 100}%`;
+
+      const card = document.getElementById('riderCard');
+      card.classList.remove('correct', 'wrong');
+
+      // Pick 3 wrong teams + 1 correct
+      let wrongTeams = teamNames.filter(t => t !== correctTeam);
+      wrongTeams = shuffle(wrongTeams).slice(0, 3);
+      const options = shuffle([correctTeam, ...wrongTeams]);
+
+      const grid = document.getElementById('optionsGrid');
+      grid.innerHTML = '';
+      options.forEach(team => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.textContent = team;
+        btn.dataset.team = team;
+        btn.addEventListener('click', () => handleAnswer(team, correctTeam));
+        grid.appendChild(btn);
+      });
+    }
+
+    function handleAnswer(chosen, correctTeam) {
+      if (answering) return;
+      answering = true;
+
+      const rider = quizRiders[currentIndex];
+      const card = document.getElementById('riderCard');
+      const buttons = document.querySelectorAll('.option-btn');
+      const isCorrect = chosen === correctTeam;
+
+      if (isCorrect) {
+        correct++;
+        streak++;
+        if (streak > bestStreak) bestStreak = streak;
+        card.classList.add('correct');
+        document.getElementById('feedback').textContent = streak > 1 ? `${streak} op rij!` : 'Goed!';
+        document.getElementById('feedback').style.color = '#2ECC71';
+      } else {
+        wrong++;
+        streak = 0;
+        card.classList.add('wrong');
+        document.getElementById('feedback').textContent = correctTeam;
+        document.getElementById('feedback').style.color = '#C93C3B';
+      }
+
+      // Show fun fact
+      const fact = riderFacts[rider];
+      if (fact) {
+        const factEl = document.getElementById('riderFact');
+        factEl.textContent = fact;
+        factEl.classList.remove('hidden');
+      }
+
+      document.getElementById('correctCount').textContent = correct;
+      document.getElementById('wrongCount').textContent = wrong;
+      document.getElementById('streakCount').textContent = streak;
+
+      buttons.forEach(btn => {
+        btn.disabled = true;
+        if (btn.dataset.team === correctTeam) {
+          btn.classList.add(isCorrect ? 'correct-answer' : 'reveal-correct');
+        } else if (btn.dataset.team === chosen && !isCorrect) {
+          btn.classList.add('wrong-answer');
+        }
+      });
+
+      // Show next button
+      document.getElementById('nextBtn').classList.remove('hidden');
+    }
+
+    function nextQuestion() {
+      currentIndex++;
+      if (currentIndex >= quizRiders.length) {
+        showResults();
+      } else {
+        showQuestion();
+      }
+    }
+
+    function showResults() {
+      document.getElementById('quizScreen').classList.add('hidden');
+      document.getElementById('resultsScreen').classList.remove('hidden');
+
+      const pct = Math.round((correct / quizRiders.length) * 100);
+      document.getElementById('finalScore').textContent = `${pct}%`;
+      document.getElementById('resultsDetail').textContent =
+        `${correct} goed, ${wrong} fout van ${quizRiders.length} renners\nBeste streak: ${bestStreak}`;
+    }
+
+    function showStart() {
+      document.getElementById('quizScreen').classList.add('hidden');
+      document.getElementById('resultsScreen').classList.add('hidden');
+      document.getElementById('startScreen').classList.remove('hidden');
+    }
+
+    function confirmHome() {
+      if (confirm('Weet je zeker dat je wilt stoppen? Je voortgang gaat verloren.')) {
+        showStart();
+      }
+    }
+
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>

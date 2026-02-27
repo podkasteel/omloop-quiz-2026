@@ -1,0 +1,18 @@
+{
+  "name": "Omloop Quiz - De Rode Lantaarn",
+  "short_name": "Omloop Quiz",
+  "description": "Ken jij alle renners van de Omloop Het Nieuwsblad 2026?",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#23AAE1",
+  "theme_color": "#23AAE1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "assets/logos/rodelantaarn.jpeg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
